@@ -1,0 +1,303 @@
+#pragma version 8
+txn ApplicationID
+int 0
+==
+bnz main_l21
+txn OnCompletion
+int DeleteApplication
+==
+bnz main_l20
+txn OnCompletion
+int UpdateApplication
+==
+bnz main_l19
+txn OnCompletion
+int CloseOut
+==
+bnz main_l18
+txn OnCompletion
+int OptIn
+==
+bnz main_l17
+txna ApplicationArgs 0
+byte "Vote"
+==
+bnz main_l16
+txna ApplicationArgs 0
+byte "NewApp"
+==
+bnz main_l15
+txna ApplicationArgs 0
+byte "CheckVote"
+==
+bnz main_l11
+txna ApplicationArgs 0
+byte "AddVote"
+==
+bnz main_l10
+err
+main_l10:
+global CurrentApplicationAddress
+balance
+byte "prevBal"
+app_global_get
+-
+store 0
+byte "prevBal"
+global CurrentApplicationAddress
+balance
+app_global_put
+int 1
+assert
+txna ApplicationArgs 2
+sha256
+txna ApplicationArgs 2
+len
+int 128
++
+box_create
+assert
+txna ApplicationArgs 2
+sha256
+int 0
+txna ApplicationArgs 1
+int 0
+itob
+concat
+txna ApplicationArgs 2
+concat
+box_replace
+load 0
+int 2500
+int 400
+txna ApplicationArgs 2
+len
+int 128
++
+int 32
++
+*
++
+>=
+assert
+int 1
+return
+main_l11:
+txna ApplicationArgs 2
+sha256
+box_get
+store 13
+store 12
+load 13
+assert
+load 12
+len
+int 96
+-
+pop
+load 12
+len
+int 96
+-
+txna ApplicationArgs 2
+len
+==
+assert
+int 96
+store 11
+txna ApplicationArgs 1
+load 12
+extract 0 32
+==
+assert
+main_l12:
+load 12
+len
+int 96
+-
+int 96
++
+load 11
+>=
+bnz main_l14
+int 1
+assert
+txna ApplicationArgs 3
+sha256
+int 32
+int 64
+box_extract
+btoi
+store 9
+txna ApplicationArgs 1
+int 64
+int 64
+box_extract
+btoi
+store 10
+load 9
+int 100
+*
+txna ApplicationArgs 2
+btoi
+/
+load 10
+>=
+assert
+txna ApplicationArgs 3
+sha256
+box_del
+pop
+int 1
+return
+main_l14:
+txna ApplicationArgs 2
+sha256
+load 11
+load 11
+int 64
++
+box_extract
+pop
+txna ApplicationArgs 2
+sha256
+load 11
+load 11
+int 64
++
+box_extract
+txna ApplicationArgs 2
+load 11
+int 96
+-
+int 64
+extract3
+b==
+assert
+b main_l12
+main_l15:
+txna ApplicationArgs 1
+int 128
+box_create
+pop
+txna ApplicationArgs 1
+int 0
+txna ApplicationArgs 2
+txna ApplicationArgs 3
+concat
+box_replace
+int 1
+return
+main_l16:
+txn Sender
+global CurrentApplicationID
+app_opted_in
+txna ApplicationArgs 1
+box_len
+store 2
+store 1
+load 2
+&&
+txna ApplicationArgs 2
+box_get
+store 5
+store 4
+load 5
+assert
+txna ApplicationArgs 2
+int 0
+int 64
+box_extract
+store 3
+load 3
+txna ApplicationArgs 1
+==
+assert
+int 1
+&&
+txna Accounts 0
+txna ApplicationArgs 2
+app_local_get
+!
+&&
+global CurrentApplicationAddress
+balance
+byte "prevBal"
+app_global_get
+-
+store 0
+byte "prevBal"
+global CurrentApplicationAddress
+balance
+app_global_put
+int 1
+&&
+assert
+txna ApplicationArgs 1
+int 0
+int 64
+box_extract
+pop
+load 0
+txna ApplicationArgs 1
+int 0
+int 64
+box_extract
+btoi
+>=
+assert
+int 0
+txna ApplicationArgs 2
+int 1
+app_local_put
+load 5
+assert
+txna ApplicationArgs 2
+int 64
+int 64
+box_extract
+btoi
+store 6
+load 6
+int 1
++
+store 6
+txna ApplicationArgs 2
+box_len
+store 8
+store 7
+txna ApplicationArgs 2
+int 64
+load 6
+itob
+txna ApplicationArgs 2
+int 96
+load 7
+int 96
+-
+box_extract
+concat
+box_replace
+int 1
+assert
+int 1
+return
+main_l17:
+int 1
+return
+main_l18:
+int 1
+return
+main_l19:
+int 0
+return
+main_l20:
+int 0
+return
+main_l21:
+byte "prevBal"
+global CurrentApplicationAddress
+balance
+app_global_put
+int 1
+return
