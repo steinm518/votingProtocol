@@ -14,6 +14,7 @@ import json
 f = open("accounts.json")
 jsonDict = json.load(f)
 accounts = jsonDict["accounts"]
+
 # user declared algod connection parameters
 algod_address = "http://localhost:4001"
 algod_token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -22,7 +23,7 @@ algod_client = algod.AlgodClient(algod_token, algod_address)
 params = algod_client.suggested_params()
 params.fee=5000
 def create_application():
-    voteApp=99
+    voteApp=jsonDict["voteid"]
     #make sender
     local_ints = 0
     local_bytes = 0
@@ -59,7 +60,11 @@ def create_application():
     wait_for_confirmation(algod_client, txid)
     transaction_response = algod_client.pending_transaction_info(txid)
     app_id = transaction_response["application-index"]
+    jsonDict["appid"]=app_id
+    with open('accounts.json', 'w') as outfile:
+        json.dump(jsonDict,outfile)
     print("Created new app-id:", app_id)
+    print(transaction_response)
 
 def wait_for_confirmation(client, txid):
     last_round = client.status().get("last-round")

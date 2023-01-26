@@ -3,16 +3,22 @@ import base64
 from algosdk.future import transaction
 from algosdk import account, mnemonic
 from algosdk.v2client import algod
+import algosdk
 from pyteal import compileTeal, Mode
 from voteProt import programMaker, clearProgram
 from pyteal import *
 import json
+import subprocess 
+
+
 
 
 
 f = open("accounts.json")
 jsonDict = json.load(f)
 accounts = jsonDict["accounts"]
+voteid = jsonDict["voteid"]
+
 # user declared algod connection parameters
 algod_address = "http://localhost:4001"
 algod_token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -55,8 +61,24 @@ def create_application():
     wait_for_confirmation(algod_client, txid)
     transaction_response = algod_client.pending_transaction_info(txid)
     app_id = transaction_response["application-index"]
+    app_address=transaction_response["logs"][0]
+    print(app_address)
+    jsonDict["voteid"]=app_id
+    
+    #Must manually update app_address
+    
     print("Created new app-id:", app_id)
     print(transaction_response)
+    sandbox='/home/stein/Desktop/CS598/sandbox/./sandbox'
+    args = [sandbox,'goal','app', 'info','--app-id',str(app_id)]
+    output = subprocess.check_output(args)
+    output=output.splitlines()[1]
+    output=output.split()[2]
+    address=output.decode()
+    print(address)
+    jsonDict["vote_addr"]=address
+    with open('accounts.json', 'w') as outfile:
+        json.dump(jsonDict,outfile)
 
 def wait_for_confirmation(client, txid):
     last_round = client.status().get("last-round")

@@ -9,8 +9,12 @@ from hashlib import sha256
 algod_address = "http://localhost:4001"
 algod_token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 algod_client = algod.AlgodClient(algod_token, algod_address)
-appID = 101
-voteProt=99
+f = open("accounts.json")
+jsonDict = json.load(f)
+accounts = jsonDict["accounts"]
+voteProt = jsonDict["voteid"]
+voteAddr= jsonDict["vote_addr"]
+appID = jsonDict["appid"]
 params = algod_client.suggested_params()
 params.fee=200000
 def sendTxn(txn,private_key):
@@ -35,9 +39,12 @@ def contract_optIn(private_key,app):
 
 def createContract(private_key, contract):
     sender=account.address_from_private_key(private_key)
+    txn1=transaction.PaymentTxn(sender,params,voteAddr,amt=120000)
+    print(txn1)
+    sendTxn(txn1,private_key)
     txn= transaction.ApplicationNoOpTxn(sender,params,appID,
     foreign_apps=[voteProt],
-    boxes=[[voteProt,"MinVia"], [voteProt,sha256(contract).digest()]],
+    boxes=[[voteProt,appID.to_bytes(8,"big")], [voteProt,sha256(contract).digest()]],
     app_args=["AddVote",contract]
     )
     print(txn)
@@ -46,8 +53,8 @@ def createContract(private_key, contract):
 def vote(private_key, contract):
     sender=account.address_from_private_key(private_key)
     txn= transaction.ApplicationNoOpTxn(sender,params,appID,
-    foreign_apps=[voteProt],
-    boxes=[[voteProt,"MinVia"], [voteProt,sha256(contract).digest()]],
+    foreign_apps=[voteProt,appID],
+    boxes=[[voteProt,appID.to_bytes(8,"big")], [voteProt,sha256(contract).digest()]],
     app_args=["Vote",sha256(contract).digest()]
     )
     sendTxn(txn,private_key)
@@ -57,12 +64,24 @@ def checkContract(private_key, contract):
     txn=transaction.ApplicationUpdateTxn(sender,params,appID,
     approval_program=contract,
     clear_program=contract,
-    foreign_apps=[voteProt],
-    boxes=[[voteProt,"MinVia"], [voteProt,sha256(contract).digest()]],
+    foreign_apps=[voteProt,appID],
+    boxes=[[voteProt,appID.to_bytes(8,"big")], [voteProt,sha256(contract).digest()]],
     app_args=[contract]
     )
     print(txn)
     sendTxn(txn,private_key)
+def create(private_key):
+    sender=account.address_from_private_key(private_key)
+    txn1=transaction.PaymentTxn(sender,params,voteAddr,amt=120000)
+    print(txn1)
+    sendTxn(txn1,private_key)
+    txn2=transaction.ApplicationNoOpTxn(sender,params, appID, 
+    foreign_apps=[voteProt,appID],
+    app_args=["Create"],
+    boxes=[[voteProt,appID.to_bytes(8,"big")]])
+    print(txn2)
+    sendTxn(txn2,private_key)
+    
 def main(): 
     f = open("accounts.json")
     jsonDict = json.load(f)
@@ -72,9 +91,10 @@ def main():
     programCompiled2= compileTeal(clearProgram(),mode=Mode.Application, version=8)
     bin2= algod_client.compile(programCompiled2)
     binaryProgram2 = base64.b64decode(bin2["result"])
-    createContract(private_key,binaryProgram2)
-    #contract_optIn(private_key,appID)
-    #contract_optIn(private_key,voteProt)
+    #createContract(private_key,binaryProgram2)
+    contract_optIn(private_key,appID)
+    contract_optIn(private_key,voteProt)
     #checkContract(private_key,binaryProgram2)
+    create(private_key)
     #vote(private_key,binaryProgram2)
 main()
